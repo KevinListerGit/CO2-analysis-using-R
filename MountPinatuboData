@@ -1,0 +1,87 @@
+library(tidyverse)
+library (zoo)
+
+co2data2 <- read.table("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt")
+co2data2
+date <- co2data2[,3]
+Content <- co2data2[,4] 
+print (date)
+print (Content)
+meanCO2 <- mean(Content)
+print (meanCO2)
+
+# set end and finish records for analysis
+
+startingRecord  = 100
+EndingRecord =777
+
+# create a sub matrix of the CO2 data
+
+co2Subset = co2data2[startingRecord:EndingRecord,]
+meanCO2Subset = round(mean(co2Subset[,4]), digits = 1)
+print (meanCO2Subset)
+
+# plot CO2 data for the submatrix
+
+co2Subset %>%
+  ggplot(
+  mapping = aes(x = co2Subset[,3], y= co2Subset[,4])) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Mauna Loa Data ", caption = paste( "mean = ", as.character(meanCO2Subset))) +
+  ylab("CO2 Concentraton ppm") +
+  xlab("Year") +
+  theme(plot.caption.position = "panel",
+        plot.caption = element_text(vjust = 110, hjust = 0.5))
+
+# calculate the moving average for the sub set of data
+
+movingaverage = matrix(rollmean(co2Subset[,4],12))
+print (movingaverage)
+numberofrowsmovingaverage = nrow(movingaverage)
+numberofdates = nrow(co2Subset)
+print (numberofrowsmovingaverage)
+print (numberofdates)
+
+# create matrix for moving averages and combine with dates
+
+# movingaveragewithdates = cbind(co2Subset[0:numberofrowsmovingaverage,3],movingaverage)
+
+# create a data frame for the moving averages. Note that we need to set the number of 
+# rows for the year equal to the number of moving average values
+
+dataframe = data.frame (year = co2Subset[0:numberofrowsmovingaverage,3], co2movav = movingaverage)
+
+# plot the moving averages
+
+dataframe %>%
+  ggplot(
+    mapping = aes(x = year, y= co2movav)) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Mauna Loa Data Moving Average") +
+  ylab("CO2 Concentraton ppm") +
+  xlab("Year")
+
+# group data by year
+
+yeardata <- co2data2 %>% group_by(V1)
+
+# find amplitude of cycles
+
+yeardataframe <- yeardata %>% summarise(
+  max = max(V4),
+  min  = min(V4),
+  diff = max - min)
+
+
+# plot amplitudes
+
+yeardataframe %>%
+  ggplot(
+    mapping = aes(x = V1, y= diff)) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Amplitude") +
+  ylab("change in ppm winter to summer") +
+  xlab("Year")
