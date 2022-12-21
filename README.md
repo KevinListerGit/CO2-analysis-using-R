@@ -1,6 +1,8 @@
 # CO2-analysis-using-R
 This module analyises the seasonal amplitude change of the Mauna Loa CO2 data
 
+The purpose of this analysis is to investigate the annual cycles in the Mauna Loa data set. Upon doing this the 1992 anamoly which is coincidental with the Mount Pinatubo erruption is clear.
+
 
 ![Mauna Loa Data](https://user-images.githubusercontent.com/96957075/208957278-1ce8eac1-618d-4694-85ed-8c60f040b493.png)
 
