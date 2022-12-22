@@ -12,7 +12,7 @@ print (meanCO2)
 
 # set end and finish records for analysis
 
-startingRecord  = 100
+startingRecord  = 0
 EndingRecord =777
 
 # create a sub matrix of the CO2 data
@@ -37,7 +37,6 @@ co2Subset %>%
 # calculate the moving average for the sub set of data
 
 movingaverage = matrix(rollmean(co2Subset[,4],12))
-print (movingaverage)
 numberofrowsmovingaverage = nrow(movingaverage)
 numberofdates = nrow(co2Subset)
 print (numberofrowsmovingaverage)
@@ -67,21 +66,123 @@ dataframe %>%
 
 yeardata <- co2data2 %>% group_by(V1)
 
-# find amplitude of cycles
+# find amplitude of cycles winter to summer in a single year
 
 yeardataframe <- yeardata %>% summarise(
   max = max(V4),
   min  = min(V4),
+  mean = mean(V4),
   diff = max - min)
+  
+
+# find amplitudes of cycles summer to the next winter, so going from one year to the next
+
+numberofrowsinyeardate = nrow(yeardataframe)
+
+maxvalue = yeardataframe[,2]
+minvalue = yeardataframe[,3]
+print (maxvalue)
+print (minvalue)
+
+#remove first value from maxvalue matrix and last value for minvalue matrix and find difference
+
+newmaxvalue = maxvalue[-1,]
+newminvalue = maxvalue[-numberofrowsinyeardate,]
+difference = newmaxvalue - newminvalue
+nrow(newmaxvalue)
+nrow(newminvalue)
+
+# removed the first year for the summer to winter difference
+
+SummerToWinterYear = yeardataframe[-1,]
+
+# create new matrix with difference and dates
+
+SummerToWinterAmplitude <- cbind(SummerToWinterYear[,1],difference)
 
 
-# plot amplitudes
+# plot amplitudes winter to summer
 
 yeardataframe %>%
   ggplot(
     mapping = aes(x = V1, y= diff)) +
   geom_point(size=0.5) +
   geom_line(colour = "red") +
-  labs(title = "Amplitude") +
+  labs(title = "Amplitude Winter to Summer") +
   ylab("change in ppm winter to summer") +
-  xlab("Year")
+  xlab("Year")+
+  xlim(1955,2020)
+  # expand_limits(x=c(1980,2020))
+
+#plot amplitudes summer to winter
+
+SummerToWinterAmplitude %>%
+  ggplot(
+    mapping = aes(x = SummerToWinterAmplitude[,1], y= SummerToWinterAmplitude[,2])) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Amplitude Summer to Winter") +
+  ylab("change in ppm winter to summer") +
+  xlab("Year")+
+  xlim(1955,2020)
+# expand_limits(x=c(1980,2020))
+
+
+# find increase in means from one year to the next
+
+FirstMean <- yeardataframe[,4]
+SecondMean <- yeardataframe[,4]
+
+#remove first element from FirstMean and last element for SecondMean
+
+FirstMeanNew = FirstMean[-1,]
+SecondMeanNew = SecondMean[-numberofrowsinyeardate,]
+ChangeInMean =  FirstMeanNew - SecondMeanNew
+
+# create new matrix with dates and change in mean
+
+ChangeInMeanbyDate = cbind(SummerToWinterYear[,1],ChangeInMean)
+
+# correct amplitude changes to reflect change of baseline
+
+#removed the first entry of yeardataframe
+yeardataframe1stEntryRemoved = yeardataframe[-1,]
+
+# wintertosummer
+NewRisingAmplitude <- yeardataframe1stEntryRemoved[,5] + ChangeInMean
+# summertoWinter
+NewFallingAmplitude <- SummerToWinterAmplitude[,2] - ChangeInMean
+
+# create matrix of corrected amplitudes and year
+
+CorrectedAmpltidue = cbind(yeardataframe1stEntryRemoved[,1],NewRisingAmplitude,NewFallingAmplitude)
+
+#Plot corrected Amplitudes
+
+CorrectedAmpltidue %>%
+  ggplot(
+    mapping = aes(x = CorrectedAmpltidue[,1], y= CorrectedAmpltidue[,3])) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Amplitude Winter to Summer, corrected for underlying increasing trend", caption = "High Value = High CO2 absorption") +
+  ylab("change in ppm winter to summer") +
+  xlab("Year")+
+  xlim(1955,2020)+
+  theme(plot.caption.position = "panel",
+        plot.caption = element_text(vjust = 110, hjust = 0.5))
+# expand_limits(x=c(1980,2020))
+
+CorrectedAmpltidue %>%
+  ggplot(
+    mapping = aes(x = CorrectedAmpltidue[,1], y= CorrectedAmpltidue[,2])) +
+  geom_point(size=0.5) +
+  geom_line(colour = "red") +
+  labs(title = "Amplitude Summer to Winter, corrected for underlying increasing trend", caption = "High value = low CO2 absorption/high 
+emissions") +
+  ylab("change in ppm winter to summer") +
+  xlab("Year")+
+  xlim(1955,2020)+
+  theme(plot.caption.position = "panel",
+        plot.caption = element_text(vjust = 110, hjust = 0.5))
+# expand_limits(x=c(1980,2020))
+
